@@ -48,6 +48,8 @@ export async function GET(
         duration: transcript.duration,
         status: transcript.status,
         error: transcript.error,
+        aiSummary: transcript.aiSummary,
+        aiContent: transcript.aiContent,
         createdAt: transcript.createdAt,
       },
     });

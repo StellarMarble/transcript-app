@@ -62,9 +62,9 @@ export default function TranscriptPage({
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center grain">
         <div className="ambient-glow" />
-        <div className="w-8 h-8 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
+        <div className="spinner" />
       </div>
     );
   }
@@ -75,14 +75,17 @@ export default function TranscriptPage({
 
   if (error) {
     return (
-      <div className="min-h-[calc(100vh-64px)]">
+      <div className="min-h-[calc(100vh-64px)] grain">
         <div className="ambient-glow" />
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-4 py-12">
           <div className="status-error mb-6">
             {error}
           </div>
-          <Link href="/dashboard" className="text-[var(--accent)] hover:text-[var(--accent-light)]">
-            &larr; Back to Dashboard
+          <Link href="/dashboard" className="inline-flex items-center gap-2 text-[var(--accent)] hover:text-[var(--accent-light)] transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            </svg>
+            Back to Dashboard
           </Link>
         </div>
       </div>
@@ -91,12 +94,15 @@ export default function TranscriptPage({
 
   if (!transcript) {
     return (
-      <div className="min-h-[calc(100vh-64px)]">
+      <div className="min-h-[calc(100vh-64px)] grain">
         <div className="ambient-glow" />
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <p className="text-[var(--muted)]">Transcript not found</p>
-          <Link href="/dashboard" className="text-[var(--accent)] hover:text-[var(--accent-light)]">
-            &larr; Back to Dashboard
+        <div className="max-w-4xl mx-auto px-4 py-12">
+          <p className="text-[var(--muted)] mb-4">Transcript not found</p>
+          <Link href="/dashboard" className="inline-flex items-center gap-2 text-[var(--accent)] hover:text-[var(--accent-light)] transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            </svg>
+            Back to Dashboard
           </Link>
         </div>
       </div>
@@ -105,32 +111,42 @@ export default function TranscriptPage({
 
   if (transcript.status === 'failed') {
     return (
-      <div className="min-h-[calc(100vh-64px)]">
+      <div className="min-h-[calc(100vh-64px)] grain">
         <div className="ambient-glow" />
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-4 py-12">
           <Link
             href="/dashboard"
-            className="text-[var(--accent)] hover:text-[var(--accent-light)] mb-6 inline-block"
+            className="inline-flex items-center gap-2 text-[var(--accent)] hover:text-[var(--accent-light)] mb-8 transition-colors"
           >
-            &larr; Back to Dashboard
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            </svg>
+            Back to Dashboard
           </Link>
-          <div className="card-glow rounded-2xl p-6 border-red-500/30">
-            <h2 className="text-lg font-semibold text-red-400 mb-2">
-              Transcript Failed
-            </h2>
-            <p className="text-[var(--muted)]">
-              {transcript.error || 'An unknown error occurred while processing this transcript.'}
-            </p>
-            <p className="mt-4">
-              <a
-                href={transcript.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[var(--accent)] hover:text-[var(--accent-light)]"
-              >
-                {transcript.url}
-              </a>
-            </p>
+          <div className="film-card p-8 border-l-4 !border-l-[var(--error)]">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-full bg-[var(--error)]/10 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-[var(--error)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="font-display text-xl text-[var(--error)] mb-2">
+                  Transcript Failed
+                </h2>
+                <p className="text-[var(--muted)] mb-4">
+                  {transcript.error || 'An unknown error occurred while processing this transcript.'}
+                </p>
+                <a
+                  href={transcript.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-sm text-[var(--accent)] hover:text-[var(--accent-light)] break-all transition-colors"
+                >
+                  {transcript.url}
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -139,22 +155,25 @@ export default function TranscriptPage({
 
   if (transcript.status === 'processing') {
     return (
-      <div className="min-h-[calc(100vh-64px)]">
+      <div className="min-h-[calc(100vh-64px)] grain">
         <div className="ambient-glow" />
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-4 py-12">
           <Link
             href="/dashboard"
-            className="text-[var(--accent)] hover:text-[var(--accent-light)] mb-6 inline-block"
+            className="inline-flex items-center gap-2 text-[var(--accent)] hover:text-[var(--accent-light)] mb-8 transition-colors"
           >
-            &larr; Back to Dashboard
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            </svg>
+            Back to Dashboard
           </Link>
-          <div className="card-glow rounded-2xl p-8 text-center">
-            <div className="w-8 h-8 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin mx-auto mb-4" />
-            <h2 className="text-lg font-semibold mb-2">
+          <div className="film-card p-12 text-center">
+            <div className="spinner mx-auto mb-6" />
+            <h2 className="font-display text-2xl mb-3">
               Processing Transcript
             </h2>
-            <p className="text-[var(--muted)]">
-              This may take a few minutes. Please check back soon.
+            <p className="text-[var(--muted)] max-w-sm mx-auto">
+              This may take a few minutes depending on the length of the media. Please check back soon.
             </p>
           </div>
         </div>
@@ -163,14 +182,17 @@ export default function TranscriptPage({
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)]">
+    <div className="min-h-[calc(100vh-64px)] grain">
       <div className="ambient-glow" />
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-8">
         <Link
           href="/dashboard"
-          className="text-[var(--accent)] hover:text-[var(--accent-light)] mb-6 inline-block"
+          className="inline-flex items-center gap-2 text-[var(--foreground-muted)] hover:text-[var(--foreground)] mb-6 transition-colors text-sm"
         >
-          &larr; Back to Dashboard
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+          </svg>
+          Dashboard
         </Link>
         <TranscriptViewer transcript={transcript} />
       </div>

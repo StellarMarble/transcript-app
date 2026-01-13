@@ -30,7 +30,13 @@
       "Bash(touch:*)",
       "Bash(chmod:*)",
       "WebSearch",
-      "WebFetch"
+      "WebFetch",
+      "Bash(timeout:*)",
+      "Bash(ping:*)",
+      "Bash(Remove-Item -Force \"C:\\\\Users\\\\brent\\\\transcript-app\\\\.next\\\\dev\\\\lock\" -ErrorAction SilentlyContinue)",
+      "Skill(frontend-design)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

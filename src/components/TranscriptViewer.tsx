@@ -12,6 +12,8 @@ interface TranscriptViewerProps {
     title?: string | null;
     content: string;
     duration?: number | null;
+    aiSummary?: string | null;
+    aiContent?: string | null;
     createdAt: Date | string;
   };
 }
@@ -64,9 +66,27 @@ export default function TranscriptViewer({ transcript }: TranscriptViewerProps) 
   const [showCopyMenu, setShowCopyMenu] = useState(false);
   const copyMenuRef = useRef<HTMLDivElement>(null);
 
-  // AI states
-  const [summary, setSummary] = useState<AISummary | null>(null);
-  const [aiContent, setAiContent] = useState<AIContent | null>(null);
+  // AI states - initialize from saved data if available
+  const [summary, setSummary] = useState<AISummary | null>(() => {
+    if (transcript.aiSummary) {
+      try {
+        return JSON.parse(transcript.aiSummary);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+  const [aiContent, setAiContent] = useState<AIContent | null>(() => {
+    if (transcript.aiContent) {
+      try {
+        return JSON.parse(transcript.aiContent);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [loadingContent, setLoadingContent] = useState(false);
   const [aiError, setAiError] = useState('');
@@ -317,7 +337,7 @@ export default function TranscriptViewer({ transcript }: TranscriptViewerProps) 
   };
 
   return (
-    <div className="card-glow rounded-2xl overflow-hidden">
+    <div className="film-card overflow-hidden">
       {/* Header */}
       <div className="p-6 border-b border-[var(--card-border)]">
         <div className="flex items-start justify-between">
@@ -325,22 +345,22 @@ export default function TranscriptViewer({ transcript }: TranscriptViewerProps) 
             <div className="flex items-center gap-3 mb-3">
               <PlatformBadge platform={transcript.platform} size="sm" />
               {transcript.duration && (
-                <span className="text-sm text-[var(--muted)]">
+                <span className="font-mono text-xs text-[var(--muted)]">
                   {formatDuration(transcript.duration)}
                 </span>
               )}
-              <span className="text-sm text-[var(--muted)]">
+              <span className="font-mono text-xs text-[var(--muted)]">
                 {wordCount.toLocaleString()} words
               </span>
             </div>
-            <h1 className="text-xl font-semibold truncate mb-1">
+            <h1 className="font-display text-2xl truncate mb-2">
               {transcript.title || 'Untitled'}
             </h1>
             <a
               href={transcript.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-[var(--accent)] hover:text-[var(--accent-light)] truncate block"
+              className="font-mono text-xs text-[var(--accent)] hover:text-[var(--accent-light)] truncate block transition-colors"
             >
               {transcript.url}
             </a>
@@ -376,10 +396,10 @@ export default function TranscriptViewer({ transcript }: TranscriptViewerProps) 
             </button>
             {showCopyMenu && (
               <div className="absolute left-0 mt-2 w-48 rounded-lg bg-[var(--background-secondary)] border border-[var(--input-border)] shadow-lg z-10">
-                <button onClick={() => handleCopy(false)} className="block w-full text-left px-4 py-2 text-sm hover:bg-[var(--accent)]/10 rounded-t-lg">
+                <button onClick={() => handleCopy(false)} className="block w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--accent)]/10 rounded-t-lg transition-colors">
                   Copy text
                 </button>
-                <button onClick={() => handleCopy(true)} className="block w-full text-left px-4 py-2 text-sm hover:bg-[var(--accent)]/10 rounded-b-lg">
+                <button onClick={() => handleCopy(true)} className="block w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--accent)]/10 rounded-b-lg transition-colors">
                   Copy with timestamps
                 </button>
               </div>
@@ -416,10 +436,10 @@ export default function TranscriptViewer({ transcript }: TranscriptViewerProps) 
           {/* Timestamp Toggle */}
           <button
             onClick={() => setShowTimestamps(!showTimestamps)}
-            className={`inline-flex items-center px-4 py-2.5 rounded-lg border transition-colors text-sm font-medium ${
+            className={`inline-flex items-center px-4 py-2.5 rounded-lg border transition-all text-sm font-medium ${
               showTimestamps
-                ? 'bg-[var(--accent)] text-[#0c0a09] border-[var(--accent)]'
-                : 'bg-[var(--background-secondary)] border-[var(--input-border)] text-[var(--foreground)] hover:bg-[#292524]'
+                ? 'bg-[var(--accent)] text-[#0f0f0f] border-[var(--accent)]'
+                : 'bg-[var(--background-secondary)] border-[var(--card-border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:border-[var(--foreground-muted)]'
             }`}
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -430,10 +450,10 @@ export default function TranscriptViewer({ transcript }: TranscriptViewerProps) 
 
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className={`inline-flex items-center px-4 py-2.5 rounded-lg border transition-colors text-sm font-medium ${
+            className={`inline-flex items-center px-4 py-2.5 rounded-lg border transition-all text-sm font-medium ${
               isEditing
-                ? 'bg-[var(--accent)] text-[#0c0a09] border-[var(--accent)]'
-                : 'bg-[var(--background-secondary)] border-[var(--input-border)] text-[var(--foreground)] hover:bg-[#292524]'
+                ? 'bg-[var(--accent)] text-[#0f0f0f] border-[var(--accent)]'
+                : 'bg-[var(--background-secondary)] border-[var(--card-border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:border-[var(--foreground-muted)]'
             }`}
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -519,7 +539,7 @@ export default function TranscriptViewer({ transcript }: TranscriptViewerProps) 
         <div className="flex gap-1 mt-4 border-b border-[var(--card-border)]">
           <button
             onClick={() => setActiveTab('transcript')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-4 py-2.5 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors ${
               activeTab === 'transcript'
                 ? 'border-[var(--accent)] text-[var(--accent)]'
                 : 'border-transparent text-[var(--muted)] hover:text-[var(--foreground)]'
@@ -530,24 +550,24 @@ export default function TranscriptViewer({ transcript }: TranscriptViewerProps) 
           <button
             onClick={() => setActiveTab('summary')}
             disabled={!summary}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors disabled:opacity-50 ${
+            className={`px-4 py-2.5 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors disabled:opacity-50 ${
               activeTab === 'summary'
                 ? 'border-[var(--accent)] text-[var(--accent)]'
                 : 'border-transparent text-[var(--muted)] hover:text-[var(--foreground)]'
             }`}
           >
-            Summary {summary && '✓'}
+            Summary {summary && '•'}
           </button>
           <button
             onClick={() => setActiveTab('content')}
             disabled={!aiContent}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors disabled:opacity-50 ${
+            className={`px-4 py-2.5 font-mono text-xs uppercase tracking-wider border-b-2 transition-colors disabled:opacity-50 ${
               activeTab === 'content'
                 ? 'border-[var(--accent)] text-[var(--accent)]'
                 : 'border-transparent text-[var(--muted)] hover:text-[var(--foreground)]'
             }`}
           >
-            Content {aiContent && '✓'}
+            Content {aiContent && '•'}
           </button>
         </div>
       </div>
@@ -579,27 +599,27 @@ export default function TranscriptViewer({ transcript }: TranscriptViewerProps) 
         {activeTab === 'summary' && summary && (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold mb-3">Summary</h3>
-              <p className="text-[var(--foreground)] leading-relaxed bg-[var(--background)] p-4 rounded-xl border border-[var(--card-border)]">
+              <h3 className="font-display text-xl mb-3">Summary</h3>
+              <p className="text-[var(--foreground)] leading-relaxed bg-[var(--background)] p-5 rounded-lg border border-[var(--card-border)]">
                 {summary.summary}
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-3">Key Points</h3>
-              <ul className="space-y-2 bg-[var(--background)] p-4 rounded-xl border border-[var(--card-border)]">
+              <h3 className="font-display text-xl mb-3">Key Points</h3>
+              <ul className="space-y-2.5 bg-[var(--background)] p-5 rounded-lg border border-[var(--card-border)]">
                 {summary.keyPoints.map((point, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-[var(--accent)]">•</span>
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] mt-2 flex-shrink-0" />
                     <span>{point}</span>
                   </li>
                 ))}
               </ul>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-3">Topics</h3>
+              <h3 className="font-display text-xl mb-3">Topics</h3>
               <div className="flex flex-wrap gap-2">
                 {summary.topics.map((topic, i) => (
-                  <span key={i} className="px-3 py-1 bg-[var(--accent)]/10 text-[var(--accent)] rounded-full text-sm">
+                  <span key={i} className="px-3 py-1.5 bg-[var(--accent)]/10 text-[var(--accent)] rounded-md font-mono text-xs">
                     {topic}
                   </span>
                 ))}

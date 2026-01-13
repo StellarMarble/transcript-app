@@ -11,28 +11,33 @@ datasource db {
 }
 
 model User {
-  id            String       @id @default(cuid())
-  email         String       @unique
-  password      String
-  name          String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  transcripts   Transcript[]
+  id                     String       @id @default(cuid())
+  email                  String       @unique
+  password               String
+  name                   String?
+  isAdmin                Boolean      @default(false)
+  monthlyTranscriptCount Int          @default(0)
+  usageResetDate         DateTime     @default(now())
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  transcripts            Transcript[]
 }
 
 model Transcript {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  url         String
-  platform    String   // youtube, podcast, instagram, tiktok, facebook, twitter, etc.
-  title       String?
-  content     String   @db.Text // The transcript text (use TEXT type for large content)
-  duration    Int?     // Duration in seconds
-  status      String   @default("pending") // pending, processing, completed, failed
-  error       String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  url              String
+  platform         String   // youtube, podcast, instagram, tiktok, facebook, twitter, etc.
+  title            String?
+  content          String   @db.Text // The transcript text (use TEXT type for large content)
+  duration         Int?     // Duration in seconds
+  status           String   @default("pending") // pending, processing, completed, failed
+  error            String?  @db.Text
+  aiSummary        String?  @db.Text // AI-generated summary
+  aiContent        String?  @db.Text // AI-generated content (blog post, etc.)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([userId])
 }

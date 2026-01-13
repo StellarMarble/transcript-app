@@ -38,11 +38,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4">
+    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 grain">
       <div className="ambient-glow" />
-      <div className="max-w-md w-full">
+      <div className="max-w-md w-full opacity-0 animate-slideUp">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">
+          <h1 className="font-display text-4xl mb-3">
             Welcome back
           </h1>
           <p className="text-[var(--muted)]">
@@ -50,7 +50,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="card-glow rounded-2xl p-8">
+        <div className="film-card p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <div className="status-error">
@@ -59,7 +59,7 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-[var(--foreground)] mb-2">
+              <label htmlFor="email" className="block font-mono text-xs uppercase tracking-wider text-[var(--muted)] mb-2">
                 Email
               </label>
               <input
@@ -76,7 +76,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-[var(--foreground)] mb-2">
+              <label htmlFor="password" className="block font-mono text-xs uppercase tracking-wider text-[var(--muted)] mb-2">
                 Password
               </label>
               <input
@@ -95,15 +95,24 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full"
+              className="btn-primary w-full flex items-center justify-center gap-2"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? (
+                <>
+                  <div className="spinner !w-4 !h-4 !border-[#0f0f0f]/30 !border-t-[#0f0f0f]" />
+                  Signing in...
+                </>
+              ) : (
+                'Sign in'
+              )}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-[var(--muted)]">
+          <div className="divider my-6" />
+
+          <p className="text-center text-sm text-[var(--muted)]">
             Don&apos;t have an account?{' '}
-            <Link href="/auth/register" className="text-[var(--accent)] hover:text-[var(--accent-light)]">
+            <Link href="/auth/register" className="text-[var(--accent)] hover:text-[var(--accent-light)] transition-colors">
               Create one
             </Link>
           </p>

@@ -97,17 +97,17 @@ export default function RegisterPage() {
   };
 
   const strengthColors = {
-    weak: 'bg-red-500',
-    medium: 'bg-yellow-500',
-    strong: 'bg-green-500',
+    weak: 'bg-[var(--error)]',
+    medium: 'bg-[var(--warning)]',
+    strong: 'bg-[var(--success)]',
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4">
+    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 grain">
       <div className="ambient-glow" />
-      <div className="max-w-md w-full">
+      <div className="max-w-md w-full opacity-0 animate-slideUp">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">
+          <h1 className="font-display text-4xl mb-3">
             Create an account
           </h1>
           <p className="text-[var(--muted)]">
@@ -115,7 +115,7 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <div className="card-glow rounded-2xl p-8">
+        <div className="film-card p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <div className="status-error">
@@ -124,8 +124,8 @@ export default function RegisterPage() {
             )}
 
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-[var(--foreground)] mb-2">
-                Name <span className="text-[var(--muted)]">(optional)</span>
+              <label htmlFor="name" className="block font-mono text-xs uppercase tracking-wider text-[var(--muted)] mb-2">
+                Name <span className="normal-case">(optional)</span>
               </label>
               <input
                 id="name"
@@ -140,7 +140,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-[var(--foreground)] mb-2">
+              <label htmlFor="email" className="block font-mono text-xs uppercase tracking-wider text-[var(--muted)] mb-2">
                 Email
               </label>
               <input
@@ -157,7 +157,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-[var(--foreground)] mb-2">
+              <label htmlFor="password" className="block font-mono text-xs uppercase tracking-wider text-[var(--muted)] mb-2">
                 Password
               </label>
               <input
@@ -175,25 +175,25 @@ export default function RegisterPage() {
 
               {/* Password strength indicator */}
               {password && (
-                <div className="mt-2">
-                  <div className="flex gap-1 mb-1">
+                <div className="mt-3">
+                  <div className="flex gap-1 mb-2">
                     {[1, 2, 3, 4, 5, 6].map((i) => (
                       <div
                         key={i}
                         className={`h-1 flex-1 rounded-full transition-colors ${
                           i <= passwordStrength.score
                             ? strengthColors[passwordStrength.level]
-                            : 'bg-[var(--card-border)]'
+                            : 'bg-[var(--background-tertiary)]'
                         }`}
                       />
                     ))}
                   </div>
-                  <p className={`text-xs ${
-                    passwordStrength.level === 'weak' ? 'text-red-400' :
-                    passwordStrength.level === 'medium' ? 'text-yellow-400' :
-                    'text-green-400'
+                  <p className={`font-mono text-xs ${
+                    passwordStrength.level === 'weak' ? 'text-[var(--error)]' :
+                    passwordStrength.level === 'medium' ? 'text-[var(--warning)]' :
+                    'text-[var(--success)]'
                   }`}>
-                    {passwordStrength.level.charAt(0).toUpperCase() + passwordStrength.level.slice(1)} password
+                    {passwordStrength.level.toUpperCase()}
                   </p>
                 </div>
               )}
@@ -201,20 +201,20 @@ export default function RegisterPage() {
               {/* Password requirements */}
               {showRequirements && (
                 <div className="mt-3 p-3 bg-[var(--background)] rounded-lg border border-[var(--card-border)]">
-                  <p className="text-xs text-[var(--muted)] mb-2">Password requirements:</p>
-                  <ul className="space-y-1">
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)] mb-2">Requirements</p>
+                  <ul className="space-y-1.5">
                     {requirements.map((req, i) => (
                       <li key={i} className="flex items-center gap-2 text-xs">
-                        {req.met ? (
-                          <svg className="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          <svg className="w-3.5 h-3.5 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10" strokeWidth={2} />
-                          </svg>
-                        )}
-                        <span className={req.met ? 'text-green-400' : 'text-[var(--muted)]'}>
+                        <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${
+                          req.met ? 'bg-[var(--success)]' : 'bg-[var(--background-tertiary)]'
+                        }`}>
+                          {req.met && (
+                            <svg className="w-2 h-2 text-[#0f0f0f]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className={req.met ? 'text-[var(--foreground)]' : 'text-[var(--muted)]'}>
                           {req.text}
                         </span>
                       </li>
@@ -225,7 +225,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-[var(--foreground)] mb-2">
+              <label htmlFor="confirmPassword" className="block font-mono text-xs uppercase tracking-wider text-[var(--muted)] mb-2">
                 Confirm Password
               </label>
               <input
@@ -240,25 +240,34 @@ export default function RegisterPage() {
                 placeholder="Confirm your password"
               />
               {confirmPassword && password !== confirmPassword && (
-                <p className="mt-1 text-xs text-red-400">Passwords do not match</p>
+                <p className="mt-2 font-mono text-xs text-[var(--error)]">Passwords do not match</p>
               )}
               {confirmPassword && password === confirmPassword && confirmPassword.length > 0 && (
-                <p className="mt-1 text-xs text-green-400">Passwords match</p>
+                <p className="mt-2 font-mono text-xs text-[var(--success)]">Passwords match</p>
               )}
             </div>
 
             <button
               type="submit"
               disabled={loading || !passwordValidation.valid || password !== confirmPassword}
-              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary w-full flex items-center justify-center gap-2"
             >
-              {loading ? 'Creating account...' : 'Create account'}
+              {loading ? (
+                <>
+                  <div className="spinner !w-4 !h-4 !border-[#0f0f0f]/30 !border-t-[#0f0f0f]" />
+                  Creating account...
+                </>
+              ) : (
+                'Create account'
+              )}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-[var(--muted)]">
+          <div className="divider my-6" />
+
+          <p className="text-center text-sm text-[var(--muted)]">
             Already have an account?{' '}
-            <Link href="/auth/login" className="text-[var(--accent)] hover:text-[var(--accent-light)]">
+            <Link href="/auth/login" className="text-[var(--accent)] hover:text-[var(--accent-light)] transition-colors">
               Sign in
             </Link>
           </p>

@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     // Check rate limit
     const clientIp = getClientIp(req);
-    const rateLimitResult = checkRateLimit(`register:${clientIp}`, RATE_LIMITS.registration);
+    const rateLimitResult = await checkRateLimit(`register:${clientIp}`, RATE_LIMITS.registration);
 
     if (!rateLimitResult.success) {
       return NextResponse.json(

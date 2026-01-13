@@ -6,11 +6,13 @@ import { processURL } from '@/services/transcriptProcessor';
 import { parseURL } from '@/services/urlParser';
 import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rateLimit';
 
+const FREE_MONTHLY_LIMIT = 5;
+
 export async function POST(req: NextRequest) {
   try {
     // Check rate limit
     const clientIp = getClientIp(req);
-    const rateLimitResult = checkRateLimit(`transcript:${clientIp}`, RATE_LIMITS.transcriptCreate);
+    const rateLimitResult = await checkRateLimit(`transcript:${clientIp}`, RATE_LIMITS.transcriptCreate);
 
     if (!rateLimitResult.success) {
       return NextResponse.json(
@@ -26,6 +28,47 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'You must be logged in to create transcripts' },
         { status: 401 }
+      );
+    }
+
+    // Check usage limits
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { monthlyTranscriptCount: true, usageResetDate: true, isAdmin: true },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Reset count if it's a new month
+    const now = new Date();
+    const resetDate = new Date(user.usageResetDate);
+    const isNewMonth = now.getMonth() !== resetDate.getMonth() ||
+                       now.getFullYear() !== resetDate.getFullYear();
+
+    let currentCount = user.monthlyTranscriptCount;
+    if (isNewMonth) {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { monthlyTranscriptCount: 0, usageResetDate: now },
+      });
+      currentCount = 0;
+    }
+
+    // Check if user has exceeded their limit (admins bypass)
+    if (!user.isAdmin && currentCount >= FREE_MONTHLY_LIMIT) {
+      return NextResponse.json(
+        {
+          error: `You've reached your free limit of ${FREE_MONTHLY_LIMIT} transcripts this month. Upgrade to continue.`,
+          limitReached: true,
+          used: currentCount,
+          limit: FREE_MONTHLY_LIMIT,
+        },
+        { status: 403 }
       );
     }
 
@@ -63,16 +106,22 @@ export async function POST(req: NextRequest) {
     const result = await processURL(url);
 
     if (result.success && result.transcript) {
-      // Update transcript with results
-      const updated = await prisma.transcript.update({
-        where: { id: transcript.id },
-        data: {
-          content: result.transcript,
-          title: result.title,
-          duration: result.duration,
-          status: 'completed',
-        },
-      });
+      // Update transcript with results and increment usage count
+      const [updated] = await Promise.all([
+        prisma.transcript.update({
+          where: { id: transcript.id },
+          data: {
+            content: result.transcript,
+            title: result.title,
+            duration: result.duration,
+            status: 'completed',
+          },
+        }),
+        prisma.user.update({
+          where: { id: session.user.id },
+          data: { monthlyTranscriptCount: { increment: 1 } },
+        }),
+      ]);
 
       return NextResponse.json({
         success: true,

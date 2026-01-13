@@ -12,7 +12,7 @@ export async function POST(
   try {
     // Check rate limit
     const clientIp = getClientIp(request);
-    const rateLimitResult = checkRateLimit(`ai:${clientIp}`, RATE_LIMITS.aiOperations);
+    const rateLimitResult = await checkRateLimit(`ai:${clientIp}`, RATE_LIMITS.aiOperations);
 
     if (!rateLimitResult.success) {
       return NextResponse.json(
@@ -53,15 +53,26 @@ export async function POST(
     switch (action) {
       case 'summary':
         result = await generateSummary(transcript.content);
+        // Save summary to database as JSON string
+        await prisma.transcript.update({
+          where: { id },
+          data: { aiSummary: JSON.stringify(result) },
+        });
         break;
       case 'content':
         result = await generateContent(transcript.content, transcript.title || undefined);
+        // Save generated content to database as JSON string
+        await prisma.transcript.update({
+          where: { id },
+          data: { aiContent: JSON.stringify(result) },
+        });
         break;
       case 'custom':
         if (!prompt) {
           return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
         }
         result = await generateCustomContent(transcript.content, prompt);
+        // Custom prompts don't get saved (they're one-off)
         break;
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

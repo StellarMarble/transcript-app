@@ -1,52 +1,98 @@
 /**
- * Simple in-memory rate limiter
- * For production at scale, consider using Vercel KV or Upstash Redis
+ * Redis-based rate limiter using Upstash
+ * Falls back to in-memory for local development without Redis
  */
 
-interface RateLimitEntry {
-  count: number;
-  resetTime: number;
-}
+import { Redis } from '@upstash/redis';
 
-const rateLimitMap = new Map<string, RateLimitEntry>();
+// Initialize Redis client if credentials are available
+const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+  ? new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+  : null;
 
-// Clean up old entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitMap.entries()) {
-    if (now > entry.resetTime) {
-      rateLimitMap.delete(key);
-    }
-  }
-}, 5 * 60 * 1000);
+// Fallback in-memory store for local development
+const memoryStore = new Map<string, { count: number; resetTime: number }>();
 
 export interface RateLimitConfig {
-  maxRequests: number;  // Max requests allowed
-  windowMs: number;     // Time window in milliseconds
+  maxRequests: number;
+  windowMs: number;
 }
 
 export interface RateLimitResult {
   success: boolean;
   remaining: number;
-  resetIn: number;  // Seconds until reset
+  resetIn: number;
 }
 
-export function checkRateLimit(
+export async function checkRateLimit(
+  identifier: string,
+  config: RateLimitConfig
+): Promise<RateLimitResult> {
+  if (redis) {
+    return checkRateLimitRedis(identifier, config);
+  }
+  return checkRateLimitMemory(identifier, config);
+}
+
+async function checkRateLimitRedis(
+  identifier: string,
+  config: RateLimitConfig
+): Promise<RateLimitResult> {
+  const key = `ratelimit:${identifier}`;
+  const windowSeconds = Math.ceil(config.windowMs / 1000);
+
+  try {
+    // Use Redis INCR with expiry for atomic rate limiting
+    const count = await redis!.incr(key);
+
+    // Set expiry only on first request (when count is 1)
+    if (count === 1) {
+      await redis!.expire(key, windowSeconds);
+    }
+
+    // Get TTL to calculate resetIn
+    const ttl = await redis!.ttl(key);
+    const resetIn = ttl > 0 ? ttl : windowSeconds;
+
+    if (count > config.maxRequests) {
+      return {
+        success: false,
+        remaining: 0,
+        resetIn,
+      };
+    }
+
+    return {
+      success: true,
+      remaining: config.maxRequests - count,
+      resetIn,
+    };
+  } catch (error) {
+    console.error('Redis rate limit error:', error);
+    // On Redis error, allow the request (fail open)
+    return { success: true, remaining: config.maxRequests, resetIn: 0 };
+  }
+}
+
+function checkRateLimitMemory(
   identifier: string,
   config: RateLimitConfig
 ): RateLimitResult {
   const now = Date.now();
-  const key = identifier;
+  let entry = memoryStore.get(identifier);
 
-  let entry = rateLimitMap.get(key);
+  // Clean up expired entry
+  if (entry && now > entry.resetTime) {
+    memoryStore.delete(identifier);
+    entry = undefined;
+  }
 
-  // If no entry or window has passed, create new entry
-  if (!entry || now > entry.resetTime) {
-    entry = {
-      count: 1,
-      resetTime: now + config.windowMs,
-    };
-    rateLimitMap.set(key, entry);
+  if (!entry) {
+    entry = { count: 1, resetTime: now + config.windowMs };
+    memoryStore.set(identifier, entry);
     return {
       success: true,
       remaining: config.maxRequests - 1,
@@ -54,7 +100,6 @@ export function checkRateLimit(
     };
   }
 
-  // Check if limit exceeded
   if (entry.count >= config.maxRequests) {
     return {
       success: false,
@@ -63,10 +108,7 @@ export function checkRateLimit(
     };
   }
 
-  // Increment counter
   entry.count++;
-  rateLimitMap.set(key, entry);
-
   return {
     success: true,
     remaining: config.maxRequests - entry.count,
@@ -74,7 +116,6 @@ export function checkRateLimit(
   };
 }
 
-// Get client IP from request headers
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');
   if (forwarded) {
@@ -87,20 +128,10 @@ export function getClientIp(request: Request): string {
   return 'unknown';
 }
 
-// Pre-configured rate limiters for different endpoints
 export const RATE_LIMITS = {
-  // Transcript creation: 10 per hour (expensive operation)
   transcriptCreate: { maxRequests: 10, windowMs: 60 * 60 * 1000 },
-
-  // AI operations: 20 per hour
   aiOperations: { maxRequests: 20, windowMs: 60 * 60 * 1000 },
-
-  // Auth attempts: 5 per 15 minutes (prevent brute force)
   authAttempts: { maxRequests: 5, windowMs: 15 * 60 * 1000 },
-
-  // Registration: 3 per hour
   registration: { maxRequests: 3, windowMs: 60 * 60 * 1000 },
-
-  // General API: 100 per minute
   general: { maxRequests: 100, windowMs: 60 * 1000 },
 };
