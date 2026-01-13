@@ -1,8 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+
+// Client-side password validation (mirrors server-side)
+function validatePassword(password: string) {
+  const errors: string[] = [];
+
+  if (password.length < 8) {
+    errors.push('At least 8 characters');
+  }
+  if (!/[A-Z]/.test(password)) {
+    errors.push('One uppercase letter');
+  }
+  if (!/[a-z]/.test(password)) {
+    errors.push('One lowercase letter');
+  }
+  if (!/\d/.test(password)) {
+    errors.push('One number');
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+function getPasswordStrength(password: string): { level: 'weak' | 'medium' | 'strong'; score: number } {
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[a-z]/.test(password)) score++;
+  if (/\d/.test(password)) score++;
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score++;
+
+  if (score <= 2) return { level: 'weak', score };
+  if (score <= 4) return { level: 'medium', score };
+  return { level: 'strong', score };
+}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -12,6 +46,17 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showRequirements, setShowRequirements] = useState(false);
+
+  const passwordValidation = useMemo(() => validatePassword(password), [password]);
+  const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
+
+  const requirements = [
+    { text: 'At least 8 characters', met: password.length >= 8 },
+    { text: 'One uppercase letter', met: /[A-Z]/.test(password) },
+    { text: 'One lowercase letter', met: /[a-z]/.test(password) },
+    { text: 'One number', met: /\d/.test(password) },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,8 +67,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (!passwordValidation.valid) {
+      setError('Please meet all password requirements');
       return;
     }
 
@@ -49,6 +94,12 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const strengthColors = {
+    weak: 'bg-red-500',
+    medium: 'bg-yellow-500',
+    strong: 'bg-green-500',
   };
 
   return (
@@ -117,9 +168,60 @@ export default function RegisterPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setShowRequirements(true)}
                 className="input-field"
-                placeholder="At least 6 characters"
+                placeholder="Create a strong password"
               />
+
+              {/* Password strength indicator */}
+              {password && (
+                <div className="mt-2">
+                  <div className="flex gap-1 mb-1">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full transition-colors ${
+                          i <= passwordStrength.score
+                            ? strengthColors[passwordStrength.level]
+                            : 'bg-[var(--card-border)]'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className={`text-xs ${
+                    passwordStrength.level === 'weak' ? 'text-red-400' :
+                    passwordStrength.level === 'medium' ? 'text-yellow-400' :
+                    'text-green-400'
+                  }`}>
+                    {passwordStrength.level.charAt(0).toUpperCase() + passwordStrength.level.slice(1)} password
+                  </p>
+                </div>
+              )}
+
+              {/* Password requirements */}
+              {showRequirements && (
+                <div className="mt-3 p-3 bg-[var(--background)] rounded-lg border border-[var(--card-border)]">
+                  <p className="text-xs text-[var(--muted)] mb-2">Password requirements:</p>
+                  <ul className="space-y-1">
+                    {requirements.map((req, i) => (
+                      <li key={i} className="flex items-center gap-2 text-xs">
+                        {req.met ? (
+                          <svg className="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg className="w-3.5 h-3.5 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" strokeWidth={2} />
+                          </svg>
+                        )}
+                        <span className={req.met ? 'text-green-400' : 'text-[var(--muted)]'}>
+                          {req.text}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             <div>
@@ -137,12 +239,18 @@ export default function RegisterPage() {
                 className="input-field"
                 placeholder="Confirm your password"
               />
+              {confirmPassword && password !== confirmPassword && (
+                <p className="mt-1 text-xs text-red-400">Passwords do not match</p>
+              )}
+              {confirmPassword && password === confirmPassword && confirmPassword.length > 0 && (
+                <p className="mt-1 text-xs text-green-400">Passwords match</p>
+              )}
             </div>
 
             <button
               type="submit"
-              disabled={loading}
-              className="btn-primary w-full"
+              disabled={loading || !passwordValidation.valid || password !== confirmPassword}
+              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating account...' : 'Create account'}
             </button>

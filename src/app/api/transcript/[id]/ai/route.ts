@@ -3,12 +3,24 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { generateSummary, generateContent, generateCustomContent } from '@/services/ai';
+import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rateLimit';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check rate limit
+    const clientIp = getClientIp(request);
+    const rateLimitResult = checkRateLimit(`ai:${clientIp}`, RATE_LIMITS.aiOperations);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: `Rate limit exceeded. Try again in ${rateLimitResult.resetIn} seconds.` },
+        { status: 429 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {

@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model User {
@@ -25,12 +25,14 @@ model Transcript {
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   url         String
-  platform    String   // youtube, podcast, instagram, tiktok, facebook
+  platform    String   // youtube, podcast, instagram, tiktok, facebook, twitter, etc.
   title       String?
-  content     String   // The transcript text
+  content     String   @db.Text // The transcript text (use TEXT type for large content)
   duration    Int?     // Duration in seconds
   status      String   @default("pending") // pending, processing, completed, failed
-  error       String?
+  error       String?  @db.Text
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([userId])
 }

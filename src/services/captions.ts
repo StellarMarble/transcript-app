@@ -6,6 +6,11 @@ import os from 'os';
 
 const execAsync = promisify(exec);
 
+// Sanitize URL to prevent command injection
+function sanitizeUrl(url: string): string {
+  return url.replace(/[`$\\!"';&|<>(){}[\]]/g, '');
+}
+
 export interface CaptionResult {
   success: boolean;
   transcript?: string;
@@ -29,9 +34,10 @@ export async function fetchCaptions(url: string): Promise<CaptionResult> {
 
   try {
     const ytdlp = getYtDlpCommand();
+    const safeUrl = sanitizeUrl(url);
 
     // First, check if subtitles are available
-    const listCmd = `${ytdlp} --list-subs --skip-download "${url}"`;
+    const listCmd = `${ytdlp} --list-subs --skip-download "${safeUrl}"`;
 
     let hasSubtitles = false;
     let hasAutoSubs = false;
@@ -57,7 +63,7 @@ export async function fetchCaptions(url: string): Promise<CaptionResult> {
 
     // Try to download subtitles (prefer auto-generated for most platforms as they're usually available)
     // Formats to try: vtt, srt, json3, ttml
-    const downloadCmd = `${ytdlp} --write-auto-subs --write-subs --sub-langs "en.*,en" --sub-format "vtt/srt/json3/best" --skip-download -o "${outputTemplate}" "${url}"`;
+    const downloadCmd = `${ytdlp} --write-auto-subs --write-subs --sub-langs "en.*,en" --sub-format "vtt/srt/json3/best" --skip-download -o "${outputTemplate}" "${safeUrl}"`;
 
     try {
       await execAsync(downloadCmd, {

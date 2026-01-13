@@ -1,14 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
+import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rateLimit';
+import { validatePassword, validateEmail } from '@/lib/validation';
 
 export async function POST(req: NextRequest) {
   try {
+    // Check rate limit
+    const clientIp = getClientIp(req);
+    const rateLimitResult = checkRateLimit(`register:${clientIp}`, RATE_LIMITS.registration);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: `Too many registration attempts. Try again in ${rateLimitResult.resetIn} seconds.` },
+        { status: 429 }
+      );
+    }
+
     const { email, password, name } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate email format
+    if (!validateEmail(email)) {
+      return NextResponse.json(
+        { error: 'Please enter a valid email address' },
+        { status: 400 }
+      );
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return NextResponse.json(
+        { error: passwordValidation.errors[0] },
         { status: 400 }
       );
     }

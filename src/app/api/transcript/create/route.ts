@@ -4,9 +4,21 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { processURL } from '@/services/transcriptProcessor';
 import { parseURL } from '@/services/urlParser';
+import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
   try {
+    // Check rate limit
+    const clientIp = getClientIp(req);
+    const rateLimitResult = checkRateLimit(`transcript:${clientIp}`, RATE_LIMITS.transcriptCreate);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: `Rate limit exceeded. Try again in ${rateLimitResult.resetIn} seconds.` },
+        { status: 429 }
+      );
+    }
+
     // Check authentication
     const session = await getServerSession(authOptions);
 

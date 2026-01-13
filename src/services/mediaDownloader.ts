@@ -6,6 +6,12 @@ import os from 'os';
 
 const execAsync = promisify(exec);
 
+// Sanitize URL to prevent command injection
+function sanitizeUrl(url: string): string {
+  // Remove any shell metacharacters that could escape quotes
+  return url.replace(/[`$\\!"';&|<>(){}[\]]/g, '');
+}
+
 export interface DownloadResult {
   success: boolean;
   audioPath?: string;
@@ -58,8 +64,9 @@ export async function getMediaInfo(url: string): Promise<MediaInfo | null> {
 
   try {
     const ytdlp = getYtDlpCommand();
+    const safeUrl = sanitizeUrl(url);
     const { stdout } = await execAsync(
-      `${ytdlp} --dump-json --no-download "${url}"`,
+      `${ytdlp} --dump-json --no-download "${safeUrl}"`,
       { maxBuffer: 10 * 1024 * 1024 }
     );
     const info = JSON.parse(stdout);
@@ -94,15 +101,16 @@ export async function downloadAudio(url: string): Promise<DownloadResult> {
     const info = await getMediaInfo(url);
 
     const ytdlp = getYtDlpCommand();
+    const safeUrl = sanitizeUrl(url);
     let downloadCmd: string;
 
     if (hasFfmpeg) {
       // If ffmpeg is available, convert to mp3
-      downloadCmd = `${ytdlp} -x --audio-format mp3 --audio-quality 0 -o "${outputTemplate}" "${url}"`;
+      downloadCmd = `${ytdlp} -x --audio-format mp3 --audio-quality 0 -o "${outputTemplate}" "${safeUrl}"`;
     } else {
       // Without ffmpeg, download best audio in native format (m4a/webm/etc)
       // OpenAI Whisper accepts: mp3, mp4, mpeg, mpga, m4a, wav, webm
-      downloadCmd = `${ytdlp} -f "bestaudio[ext=m4a]/bestaudio" -o "${outputTemplate}" "${url}"`;
+      downloadCmd = `${ytdlp} -f "bestaudio[ext=m4a]/bestaudio" -o "${outputTemplate}" "${safeUrl}"`;
     }
 
     const { stderr } = await execAsync(downloadCmd, {
