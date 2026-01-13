@@ -7,9 +7,7 @@ const globalForPrisma = globalThis as unknown as {
 // Lazy initialization to avoid build-time errors
 function getPrismaClient() {
   if (!globalForPrisma.prisma) {
-    globalForPrisma.prisma = new PrismaClient({
-      datasourceUrl: process.env.DATABASE_URL,
-    });
+    globalForPrisma.prisma = new PrismaClient();
   }
   return globalForPrisma.prisma;
 }
