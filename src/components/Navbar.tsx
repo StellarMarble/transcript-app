@@ -36,6 +36,12 @@ export default function Navbar() {
                 >
                   Dashboard
                 </Link>
+                <Link
+                  href="/settings/password"
+                  className="px-3 py-1.5 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+                >
+                  Settings
+                </Link>
                 <div className="w-px h-4 bg-[var(--card-border)] mx-1" />
                 <span className="text-xs font-mono text-[var(--muted)] hidden sm:inline max-w-[140px] truncate">
                   {session.user.email}
