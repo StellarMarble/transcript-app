@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# prisma
+/src/generated/prisma
+
+# database (local dev)
+*.db
+*.db-journal
+
+# claude code temp files
+tmpclaude-*
+nul

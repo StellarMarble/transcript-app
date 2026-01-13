@@ -1,0 +1,106 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import prisma from '@/lib/prisma';
+import { processURL } from '@/services/transcriptProcessor';
+import { parseURL } from '@/services/urlParser';
+
+export async function POST(req: NextRequest) {
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'You must be logged in to create transcripts' },
+        { status: 401 }
+      );
+    }
+
+    const { url } = await req.json();
+
+    if (!url) {
+      return NextResponse.json(
+        { error: 'URL is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate URL
+    const parsed = parseURL(url);
+
+    if (parsed.platform === 'unknown') {
+      return NextResponse.json(
+        { error: 'Unsupported URL. Please provide a YouTube, podcast, Instagram, TikTok, or Facebook URL.' },
+        { status: 400 }
+      );
+    }
+
+    // Create pending transcript record
+    const transcript = await prisma.transcript.create({
+      data: {
+        userId: session.user.id,
+        url,
+        platform: parsed.platform,
+        content: '',
+        status: 'processing',
+      },
+    });
+
+    // Process the URL (this may take a while)
+    const result = await processURL(url);
+
+    if (result.success && result.transcript) {
+      // Update transcript with results
+      const updated = await prisma.transcript.update({
+        where: { id: transcript.id },
+        data: {
+          content: result.transcript,
+          title: result.title,
+          duration: result.duration,
+          status: 'completed',
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        transcript: {
+          id: updated.id,
+          url: updated.url,
+          platform: updated.platform,
+          title: updated.title,
+          content: updated.content,
+          duration: updated.duration,
+          status: updated.status,
+          method: result.method,
+          createdAt: updated.createdAt,
+        },
+      });
+    } else {
+      // Update transcript with error
+      await prisma.transcript.update({
+        where: { id: transcript.id },
+        data: {
+          status: 'failed',
+          error: result.error,
+        },
+      });
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: result.error || 'Failed to process transcript',
+          transcriptId: transcript.id,
+        },
+        { status: 422 }
+      );
+    }
+  } catch (error) {
+    console.error('Transcript creation error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json(
+      { error: `Failed to create transcript: ${errorMessage}` },
+      { status: 500 }
+    );
+  }
+}

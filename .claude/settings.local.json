@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(taskkill /PID 1072996 /F)",
+      "Bash(cmd.exe //c \"taskkill /PID 1072996 /F\")",
+      "Bash(pip install:*)",
+      "Bash(python -m yt_dlp:*)",
+      "Bash(ffmpeg:*)",
+      "Bash(winget install:*)",
+      "Bash(cmd.exe //c \"taskkill /PID 1281800 /F\")",
+      "WebSearch",
+      "WebFetch(domain:www.youtube-transcript.io)",
+      "WebFetch(domain:tactiq.io)",
+      "WebFetch(domain:notegpt.io)",
+      "WebFetch(domain:www.castmagic.io)",
+      "WebFetch(domain:podsqueeze.com)",
+      "WebFetch(domain:kome.ai)",
+      "Bash(npx tsc:*)",
+      "Bash(gh:*)",
+      "Bash(where.exe:*)",
+      "Bash(ls:*)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" --version)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" repo create transcript-app --public --source=. --remote=origin --description \"AI-powered video/audio transcription app supporting 15+ platforms\")",
+      "Bash(git add:*)"
+    ]
+  }
+}
